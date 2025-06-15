@@ -31,7 +31,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
 
   const cards = [
     {
-      title: 'Total Vehicles',
+      title: 'Total',
       value: stats.total,
       icon: Truck,
       color: 'bg-blue-500',
@@ -52,28 +52,28 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
       textColor: 'text-yellow-600'
     },
     {
-      title: 'With Destinations',
+      title: 'Destinations',
       value: destinationCount,
       icon: MapPin,
       color: 'bg-purple-500',
       textColor: 'text-purple-600'
     },
     {
-      title: 'With Load Numbers',
+      title: 'Load #s',
       value: loadNumberCount,
       icon: FileText,
       color: 'bg-emerald-500',
       textColor: 'text-emerald-600'
     },
     {
-      title: 'With Appointments',
+      title: 'Appointments',
       value: appointmentCount,
       icon: Calendar,
       color: 'bg-indigo-500',
       textColor: 'text-indigo-600'
     },
     {
-      title: 'Late/At Risk',
+      title: 'Late/Risk',
       value: lateCount + atRiskCount,
       icon: AlertCircle,
       color: 'bg-red-500',
@@ -90,22 +90,22 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-6 mb-8">
+    <div className="stats-grid">
       {cards.map((card, index) => (
-        <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className={`${card.color} rounded-md p-3`}>
-              <card.icon className="w-6 h-6 text-white" />
+        <div key={index} className="stat-card">
+          <div className="stat-icon-container">
+            <div className={`stat-icon ${card.color}`}>
+              <card.icon className="w-4 h-4 text-white" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">{card.title}</p>
-              <p className={`text-2xl font-semibold ${card.textColor}`}>
-                {card.value}
-              </p>
-              {card.subtitle && (
-                <p className="text-xs text-gray-500 mt-1">{card.subtitle}</p>
-              )}
+          </div>
+          <div className="stat-content">
+            <div className="stat-title">{card.title}</div>
+            <div className={`stat-value ${card.textColor}`}>
+              {card.value}
             </div>
+            {card.subtitle && (
+              <div className="stat-subtitle">{card.subtitle}</div>
+            )}
           </div>
         </div>
       ))}
