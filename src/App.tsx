@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Layout/Header';
 import { StatsCards } from './components/Dashboard/StatsCards';
 import { VehicleTable } from './components/Dashboard/VehicleTable';
+import { LateTrackingFilter } from './components/Dashboard/LateTrackingFilter';
 import { ApiConfigPanel } from './components/Settings/ApiConfigPanel';
 import { SystemSettings } from './components/Settings/SystemSettings';
 import { DeliveryAddressForm } from './components/DeliveryManager/DeliveryAddressForm';
@@ -9,10 +10,13 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { useDestinations } from './hooks/useDestinations';
 import { useDistanceCalculation } from './hooks/useDistanceCalculation';
 import { useLoadNumbers } from './hooks/useLoadNumbers';
+import { useDeliveryAppointments } from './hooks/useDeliveryAppointments';
 import { motiveApi } from './services/motiveApi';
 import { mappingApi } from './services/mappingApi';
 import { mapboxService } from './services/mapboxService';
+import { lateTrackingService, FilterCategories } from './services/lateTrackingService';
 import { DestinationData } from './components/Dashboard/EditableDestination';
+import { DeliveryAppointment } from './services/deliveryAppointmentsService';
 import { 
   Vehicle, 
   APIConfig, 
@@ -21,7 +25,7 @@ import {
   DeliveryDestination,
   MapProvider
 } from './types';
-import { Settings, Truck, MapPin, X, AlertCircle, FileText } from 'lucide-react';
+import { Settings, Truck, MapPin, X, AlertCircle, FileText, Calendar } from 'lucide-react';
 
 const DEFAULT_SYSTEM_SETTINGS: SystemSettingsType = {
   refreshInterval: 5,
@@ -55,6 +59,8 @@ function App() {
   const [settingsTab, setSettingsTab] = useState<'api' | 'system'>('api');
   const [error, setError] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'testing'>('disconnected');
+  const [activeFilter, setActiveFilter] = useState<keyof FilterCategories>('all');
+  const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
 
   // Use destination management hook
   const { destinations, setDestination, getDestination, getDestinationStats } = useDestinations();
@@ -64,6 +70,9 @@ function App() {
 
   // Use distance calculation hook
   const { getDistance, isCalculating, hasDestination } = useDistanceCalculation(vehicles, destinations);
+
+  // Use delivery appointments hook
+  const { appointments, setVehicleAppointments, getVehicleAppointments, getNextAppointment, getAppointmentStats } = useDeliveryAppointments();
 
   // Initialize services
   useEffect(() => {
@@ -109,6 +118,12 @@ function App() {
       testAndRefresh();
     }
   }, [motiveConfig.apiKey, motiveConfig.isActive]);
+
+  // Apply filtering when vehicles, appointments, or filter changes
+  useEffect(() => {
+    const categories = lateTrackingService.getFilterCategories(vehicles, appointments, getDistance);
+    setFilteredVehicles(categories[activeFilter] || []);
+  }, [vehicles, appointments, activeFilter, getDistance]);
 
   const testAndRefresh = async () => {
     if (!motiveConfig.apiKey || isRefreshing) {
@@ -230,11 +245,17 @@ function App() {
     setLoadNumber(vehicleId, loadNumber);
   };
 
+  const handleAppointmentsChange = (vehicleId: string, newAppointments: DeliveryAppointment[]) => {
+    setVehicleAppointments(vehicleId, newAppointments);
+  };
+
   // Get statistics for display
   const destinationStats = getDestinationStats();
   const loadNumberStats = getLoadNumberStats();
+  const appointmentStats = getAppointmentStats();
   const destinationCount = vehicles.filter(v => hasDestination(v.id)).length;
   const loadNumberCount = vehicles.filter(v => loadNumbers[v.id]).length;
+  const appointmentCount = Object.keys(appointments).length;
 
   const renderContent = () => {
     switch (activeTab) {
@@ -384,7 +405,7 @@ function App() {
 
             {/* Feature Statistics */}
             {vehicles.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
@@ -413,6 +434,20 @@ function App() {
                   </div>
                 </div>
 
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <Calendar className="h-5 w-5 text-purple-400" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-purple-800">
+                        {appointmentCount} vehicles with appointments • 
+                        Late tracking enabled
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
@@ -427,14 +462,28 @@ function App() {
                 </div>
               </div>
             )}
+
+            {/* Late Tracking Filter */}
+            {vehicles.length > 0 && (
+              <LateTrackingFilter
+                vehicles={vehicles}
+                appointments={appointments}
+                distances={getDistance}
+                onFilterChange={setActiveFilter}
+                activeFilter={activeFilter}
+              />
+            )}
             
             <StatsCards 
               vehicles={vehicles} 
               destinationCount={destinationCount}
               loadNumberCount={loadNumberCount}
+              appointmentCount={appointmentCount}
+              lateCount={lateTrackingService.getFilterCategories(vehicles, appointments, getDistance).late.length}
+              atRiskCount={lateTrackingService.getFilterCategories(vehicles, appointments, getDistance).at_risk.length}
             />
             <VehicleTable 
-              vehicles={vehicles} 
+              vehicles={filteredVehicles} 
               isRefreshing={isRefreshing}
               destinations={destinations}
               onDestinationChange={handleDestinationChange}
@@ -443,6 +492,9 @@ function App() {
               getDistance={getDistance}
               isCalculatingDistance={isCalculating}
               hasDestination={hasDestination}
+              appointments={appointments}
+              onAppointmentsChange={handleAppointmentsChange}
+              getNextAppointment={getNextAppointment}
             />
           </div>
         );

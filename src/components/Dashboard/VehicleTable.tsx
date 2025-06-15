@@ -4,8 +4,12 @@ import { VehicleStatusBadge } from './VehicleStatusBadge';
 import { EditableDestination, DestinationData } from './EditableDestination';
 import { EditableLoadNumber } from './EditableLoadNumber';
 import { DistanceDisplay } from './DistanceDisplay';
+import { MultipleDeliveryAppointments } from '../DeliveryManager/MultipleDeliveryAppointments';
+import { DeliveryStatusDisplay } from './DeliveryStatusDisplay';
 import { mapboxService } from '../../services/mapboxService';
-import { Truck, MapPin, Clock, Route, RefreshCw, AlertTriangle, CheckCircle, Bug, FileText } from 'lucide-react';
+import { lateTrackingService } from '../../services/lateTrackingService';
+import { DeliveryAppointment } from '../../services/deliveryAppointmentsService';
+import { Truck, MapPin, Clock, Route, RefreshCw, AlertTriangle, CheckCircle, Bug, FileText, Calendar } from 'lucide-react';
 
 interface VehicleTableProps {
   vehicles: Vehicle[];
@@ -18,6 +22,9 @@ interface VehicleTableProps {
   getDistance: (vehicleId: string) => any;
   isCalculatingDistance: (vehicleId: string) => boolean;
   hasDestination: (vehicleId: string) => boolean;
+  appointments: Record<string, DeliveryAppointment[]>;
+  onAppointmentsChange: (vehicleId: string, appointments: DeliveryAppointment[]) => void;
+  getNextAppointment: (vehicleId: string) => DeliveryAppointment | null;
 }
 
 export const VehicleTable: React.FC<VehicleTableProps> = ({
@@ -30,7 +37,10 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
   onLoadNumberChange,
   getDistance,
   isCalculatingDistance,
-  hasDestination
+  hasDestination,
+  appointments,
+  onAppointmentsChange,
+  getNextAppointment
 }) => {
   const formatDistance = (distance?: number) => {
     if (distance === undefined) return 'N/A';
@@ -123,6 +133,16 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
     }
   };
 
+  const getDeliveryStatus = (vehicleId: string) => {
+    const vehicleAppointments = appointments[vehicleId] || [];
+    const distance = getDistance(vehicleId);
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    
+    if (!vehicle) return { status: 'no_data' as const, message: 'Vehicle not found', severity: 'low' as const };
+    
+    return lateTrackingService.analyzeTruckStatus(vehicle, vehicleAppointments, distance);
+  };
+
   const debugCoordinates = () => {
     console.group('🗺️ COORDINATE DEBUG - Current Vehicle Data');
     vehicles.forEach((vehicle, index) => {
@@ -142,7 +162,10 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
         hasDestination: hasDestination(vehicle.id),
         destination: destinations[vehicle.id]?.formattedAddress,
         loadNumber: loadNumbers[vehicle.id],
-        distance: getDistance(vehicle.id)
+        distance: getDistance(vehicle.id),
+        appointments: appointments[vehicle.id]?.length || 0,
+        nextAppointment: getNextAppointment(vehicle.id),
+        deliveryStatus: getDeliveryStatus(vehicle.id)
       });
     });
     console.groupEnd();
@@ -167,16 +190,7 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
           <Truck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No vehicles found</h3>
           <p className="text-gray-500 mb-4">
-            No vehicles were returned from the Motive API. This could be due to:
-          </p>
-          <ul className="text-sm text-gray-500 text-left max-w-md mx-auto space-y-1">
-            <li>• Invalid or expired API key</li>
-            <li>• No vehicles configured in your Motive account</li>
-            <li>• API connection issues</li>
-            <li>• Insufficient API permissions</li>
-          </ul>
-          <p className="text-gray-500 mt-4">
-            Check your API configuration in Settings and try refreshing.
+            No vehicles match the current filter criteria.
           </p>
         </div>
       </div>
@@ -193,9 +207,10 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
     v.currentLocation.lat === 0 && v.currentLocation.lon === 0
   ).length;
 
-  // Count vehicles with destinations and load numbers
+  // Count vehicles with destinations, load numbers, and appointments
   const destinationCount = vehicles.filter(v => hasDestination(v.id)).length;
   const loadNumberCount = vehicles.filter(v => loadNumbers[v.id]).length;
+  const appointmentCount = vehicles.filter(v => appointments[v.id]?.length > 0).length;
 
   return (
     <div className="bg-white shadow-sm rounded-lg overflow-hidden">
@@ -226,6 +241,10 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
             <div className="flex items-center space-x-1">
               <FileText className="w-4 h-4 text-green-500" />
               <span className="text-green-600">{loadNumberCount} with load numbers</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Calendar className="w-4 h-4 text-purple-500" />
+              <span className="text-purple-600">{appointmentCount} with appointments</span>
             </div>
             <div className="text-gray-500">
               {vehicles.length} total
@@ -265,7 +284,13 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                 Destination
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Delivery Appointments
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Distance & ETA
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Delivery Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Last Update
@@ -277,6 +302,8 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
               const locationStatus = getLocationStatus(vehicle.currentLocation);
               const hasPartialCoords = (vehicle.currentLocation.lat !== 0 && vehicle.currentLocation.lon === 0) || 
                                      (vehicle.currentLocation.lat === 0 && vehicle.currentLocation.lon !== 0);
+              const deliveryStatus = getDeliveryStatus(vehicle.id);
+              const nextAppointment = getNextAppointment(vehicle.id);
               
               return (
                 <tr
@@ -290,6 +317,10 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                         ? 'bg-orange-50' 
                         : 'bg-red-50' 
                       : ''
+                  } ${
+                    deliveryStatus.status === 'late' ? 'border-l-4 border-red-500' :
+                    deliveryStatus.status === 'at_risk' ? 'border-l-4 border-orange-500' :
+                    deliveryStatus.status === 'on_time' ? 'border-l-4 border-green-500' : ''
                   }`}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -368,11 +399,26 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                       className="min-w-0"
                     />
                   </td>
+                  <td className="px-6 py-4">
+                    <MultipleDeliveryAppointments
+                      vehicleId={vehicle.id}
+                      vehicleName={vehicle.truckNumber}
+                      onAppointmentsChange={onAppointmentsChange}
+                      className="min-w-0"
+                    />
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <DistanceDisplay
                       distance={getDistance(vehicle.id)}
                       isCalculating={isCalculatingDistance(vehicle.id)}
                       hasDestination={hasDestination(vehicle.id)}
+                    />
+                  </td>
+                  <td className="px-6 py-4">
+                    <DeliveryStatusDisplay
+                      analysis={deliveryStatus}
+                      nextAppointment={nextAppointment}
+                      className="min-w-0"
                     />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -403,6 +449,7 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
             {partialLocationCount > 0 && ` • ${partialLocationCount} with partial coordinates`}
             {destinationCount > 0 && ` • ${destinationCount} with destinations`}
             {loadNumberCount > 0 && ` • ${loadNumberCount} with load numbers`}
+            {appointmentCount > 0 && ` • ${appointmentCount} with appointments`}
           </div>
           <div>
             Last refreshed: {mapboxService.getCurrentEasternTime()}

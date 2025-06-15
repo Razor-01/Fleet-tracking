@@ -1,17 +1,23 @@
 import React from 'react';
 import { Vehicle, VehicleStatus } from '../../types';
-import { Truck, Activity, AlertTriangle, Clock, MapPin, FileText } from 'lucide-react';
+import { Truck, Activity, AlertTriangle, Clock, MapPin, FileText, Calendar, AlertCircle } from 'lucide-react';
 
 interface StatsCardsProps {
   vehicles: Vehicle[];
   destinationCount?: number;
   loadNumberCount?: number;
+  appointmentCount?: number;
+  lateCount?: number;
+  atRiskCount?: number;
 }
 
 export const StatsCards: React.FC<StatsCardsProps> = ({ 
   vehicles, 
   destinationCount = 0, 
-  loadNumberCount = 0 
+  loadNumberCount = 0,
+  appointmentCount = 0,
+  lateCount = 0,
+  atRiskCount = 0
 }) => {
   const stats = React.useMemo(() => {
     const total = vehicles.length;
@@ -60,6 +66,21 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
       textColor: 'text-emerald-600'
     },
     {
+      title: 'With Appointments',
+      value: appointmentCount,
+      icon: Calendar,
+      color: 'bg-indigo-500',
+      textColor: 'text-indigo-600'
+    },
+    {
+      title: 'Late/At Risk',
+      value: lateCount + atRiskCount,
+      icon: AlertCircle,
+      color: 'bg-red-500',
+      textColor: 'text-red-600',
+      subtitle: `${lateCount} late, ${atRiskCount} at risk`
+    },
+    {
       title: 'Stale Data',
       value: stats.stale,
       icon: Clock,
@@ -69,7 +90,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-6 mb-8">
       {cards.map((card, index) => (
         <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
@@ -81,6 +102,9 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
               <p className={`text-2xl font-semibold ${card.textColor}`}>
                 {card.value}
               </p>
+              {card.subtitle && (
+                <p className="text-xs text-gray-500 mt-1">{card.subtitle}</p>
+              )}
             </div>
           </div>
         </div>
