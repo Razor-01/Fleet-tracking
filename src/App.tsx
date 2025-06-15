@@ -3,13 +3,14 @@ import { Header } from './components/Layout/Header';
 import { StatsCards } from './components/Dashboard/StatsCards';
 import { VehicleTable } from './components/Dashboard/VehicleTable';
 import { LateTrackingFilter } from './components/Dashboard/LateTrackingFilter';
+import { DistanceControls } from './components/Dashboard/DistanceControls';
 import { ApiConfigPanel } from './components/Settings/ApiConfigPanel';
 import { SystemSettings } from './components/Settings/SystemSettings';
 import { DeliveryAddressForm } from './components/DeliveryManager/DeliveryAddressForm';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useLoadNumbers } from './hooks/useLoadNumbers';
 import { useDeliveryAppointments } from './hooks/useDeliveryAppointments';
-import { useAppointmentDistanceCalculation } from './hooks/useAppointmentDistanceCalculation';
+import { useControlledDistanceCalculation } from './hooks/useControlledDistanceCalculation';
 import { motiveApi } from './services/motiveApi';
 import { mappingApi } from './services/mappingApi';
 import { mapboxService } from './services/mapboxService';
@@ -66,8 +67,8 @@ function App() {
   // Use delivery appointments hook
   const { appointments, setVehicleAppointments, getVehicleAppointments, getNextAppointment, getAppointmentStats } = useDeliveryAppointments();
 
-  // Use appointment-based distance calculation hook
-  const { getDistance, isCalculating, hasAppointment } = useAppointmentDistanceCalculation(vehicles, appointments);
+  // Use controlled distance calculation hook
+  const { getDistance, isCalculating, hasAppointment, calculateAllDistances, getCalculationInfo } = useControlledDistanceCalculation(vehicles, appointments);
 
   // Initialize services
   useEffect(() => {
@@ -245,6 +246,9 @@ function App() {
   const loadNumberCount = vehicles.filter(v => loadNumbers[v.id]).length;
   const appointmentCount = Object.keys(appointments).length;
 
+  // Get distance calculation info
+  const calculationInfo = getCalculationInfo();
+
   const renderContent = () => {
     switch (activeTab) {
       case 'settings':
@@ -389,6 +393,19 @@ function App() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Distance Calculation Controls */}
+            {vehicles.length > 0 && (
+              <DistanceControls
+                onCalculateDistances={calculateAllDistances}
+                isCalculating={isCalculating}
+                lastCalculationTime={calculationInfo.lastCalculationTime}
+                nextCalculationTime={calculationInfo.nextCalculationTime}
+                apiCallsUsed={calculationInfo.apiCallsUsed}
+                cacheHitRate={calculationInfo.cacheHitRate}
+                usageWarning={calculationInfo.usageWarning}
+              />
             )}
 
             {/* Feature Statistics */}
