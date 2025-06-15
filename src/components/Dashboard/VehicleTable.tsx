@@ -17,7 +17,7 @@ interface VehicleTableProps {
   loadNumbers: Record<string, string>;
   onLoadNumberChange: (vehicleId: string, loadNumber: string) => void;
   getDistance: (vehicleId: string) => any;
-  isCalculatingDistance: (vehicleId: string) => boolean;
+  isCalculatingDistance: boolean;
   hasAppointment: (vehicleId: string) => boolean;
   appointments: Record<string, DeliveryAppointment[]>;
   onAppointmentsChange: (vehicleId: string, appointments: DeliveryAppointment[]) => void;
@@ -387,7 +387,7 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <DistanceDisplay
                       distance={getDistance(vehicle.id)}
-                      isCalculating={isCalculatingDistance(vehicle.id)}
+                      isCalculating={isCalculatingDistance}
                       hasDestination={hasAppointment(vehicle.id)}
                       className="min-w-0"
                     />
