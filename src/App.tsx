@@ -8,8 +8,10 @@ import { DeliveryAddressForm } from './components/DeliveryManager/DeliveryAddres
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useDestinations } from './hooks/useDestinations';
 import { useDistanceCalculation } from './hooks/useDistanceCalculation';
+import { useLoadNumbers } from './hooks/useLoadNumbers';
 import { motiveApi } from './services/motiveApi';
 import { mappingApi } from './services/mappingApi';
+import { mapboxService } from './services/mapboxService';
 import { DestinationData } from './components/Dashboard/EditableDestination';
 import { 
   Vehicle, 
@@ -19,7 +21,7 @@ import {
   DeliveryDestination,
   MapProvider
 } from './types';
-import { Settings, Truck, MapPin, X, AlertCircle } from 'lucide-react';
+import { Settings, Truck, MapPin, X, AlertCircle, FileText } from 'lucide-react';
 
 const DEFAULT_SYSTEM_SETTINGS: SystemSettingsType = {
   refreshInterval: 5,
@@ -56,6 +58,9 @@ function App() {
 
   // Use destination management hook
   const { destinations, setDestination, getDestination, getDestinationStats } = useDestinations();
+
+  // Use load number management hook
+  const { loadNumbers, setLoadNumber, getLoadNumber, getLoadNumberStats } = useLoadNumbers();
 
   // Use distance calculation hook
   const { getDistance, isCalculating, hasDestination } = useDistanceCalculation(vehicles, destinations);
@@ -221,6 +226,16 @@ function App() {
     setDestination(vehicleId, destinationData);
   };
 
+  const handleLoadNumberChange = (vehicleId: string, loadNumber: string) => {
+    setLoadNumber(vehicleId, loadNumber);
+  };
+
+  // Get statistics for display
+  const destinationStats = getDestinationStats();
+  const loadNumberStats = getLoadNumberStats();
+  const destinationCount = vehicles.filter(v => hasDestination(v.id)).length;
+  const loadNumberCount = vehicles.filter(v => loadNumbers[v.id]).length;
+
   const renderContent = () => {
     switch (activeTab) {
       case 'settings':
@@ -367,29 +382,64 @@ function App() {
               </div>
             )}
 
-            {/* Destination Statistics */}
+            {/* Feature Statistics */}
             {vehicles.length > 0 && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <MapPin className="h-5 w-5 text-green-400" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <MapPin className="h-5 w-5 text-green-400" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-green-800">
+                        {destinationCount} destinations configured • 
+                        Mapbox distance calculation enabled
+                      </p>
+                    </div>
                   </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-green-800">
-                      {getDestinationStats().total} destinations configured • 
-                      Mapbox distance calculation enabled
-                    </p>
+                </div>
+                
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <FileText className="h-5 w-5 text-emerald-400" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-emerald-800">
+                        {loadNumberCount} load numbers assigned • 
+                        Manual tracking enabled
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <AlertCircle className="h-5 w-5 text-blue-400" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-blue-800">
+                        All times displayed in Eastern Time (EST/EDT)
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
             
-            <StatsCards vehicles={vehicles} />
+            <StatsCards 
+              vehicles={vehicles} 
+              destinationCount={destinationCount}
+              loadNumberCount={loadNumberCount}
+            />
             <VehicleTable 
               vehicles={vehicles} 
               isRefreshing={isRefreshing}
               destinations={destinations}
               onDestinationChange={handleDestinationChange}
+              loadNumbers={loadNumbers}
+              onLoadNumberChange={handleLoadNumberChange}
               getDistance={getDistance}
               isCalculatingDistance={isCalculating}
               hasDestination={hasDestination}

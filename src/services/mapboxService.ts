@@ -115,10 +115,48 @@ class MapboxService {
     }
   }
 
+  // Calculate ETA in Eastern Time (EST/EDT)
   private calculateETA(durationSeconds: number): string {
     const now = new Date();
     const etaTime = new Date(now.getTime() + durationSeconds * 1000);
-    return etaTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // Format in Eastern Time (EST/EDT)
+    return etaTime.toLocaleString('en-US', {
+      timeZone: 'America/New_York',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  }
+
+  // Get current time in Eastern Time
+  getCurrentEasternTime(): string {
+    const now = new Date();
+    return now.toLocaleString('en-US', {
+      timeZone: 'America/New_York',
+      month: 'numeric',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+  }
+
+  // Format timestamp in Eastern Time
+  formatEasternTime(timestamp: string | Date): string {
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-US', {
+      timeZone: 'America/New_York',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
   }
 
   // Test API connection

@@ -2,8 +2,10 @@ import React from 'react';
 import { Vehicle } from '../../types';
 import { VehicleStatusBadge } from './VehicleStatusBadge';
 import { EditableDestination, DestinationData } from './EditableDestination';
+import { EditableLoadNumber } from './EditableLoadNumber';
 import { DistanceDisplay } from './DistanceDisplay';
-import { Truck, MapPin, Clock, Route, RefreshCw, AlertTriangle, CheckCircle, Bug } from 'lucide-react';
+import { mapboxService } from '../../services/mapboxService';
+import { Truck, MapPin, Clock, Route, RefreshCw, AlertTriangle, CheckCircle, Bug, FileText } from 'lucide-react';
 
 interface VehicleTableProps {
   vehicles: Vehicle[];
@@ -11,6 +13,8 @@ interface VehicleTableProps {
   isRefreshing?: boolean;
   destinations: Record<string, DestinationData & { updatedAt: string }>;
   onDestinationChange: (vehicleId: string, destination: DestinationData | null) => void;
+  loadNumbers: Record<string, string>;
+  onLoadNumberChange: (vehicleId: string, loadNumber: string) => void;
   getDistance: (vehicleId: string) => any;
   isCalculatingDistance: (vehicleId: string) => boolean;
   hasDestination: (vehicleId: string) => boolean;
@@ -22,6 +26,8 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
   isRefreshing = false,
   destinations,
   onDestinationChange,
+  loadNumbers,
+  onLoadNumberChange,
   getDistance,
   isCalculatingDistance,
   hasDestination
@@ -135,6 +141,7 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
         address: vehicle.currentLocation.address,
         hasDestination: hasDestination(vehicle.id),
         destination: destinations[vehicle.id]?.formattedAddress,
+        loadNumber: loadNumbers[vehicle.id],
         distance: getDistance(vehicle.id)
       });
     });
@@ -186,8 +193,9 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
     v.currentLocation.lat === 0 && v.currentLocation.lon === 0
   ).length;
 
-  // Count vehicles with destinations
+  // Count vehicles with destinations and load numbers
   const destinationCount = vehicles.filter(v => hasDestination(v.id)).length;
+  const loadNumberCount = vehicles.filter(v => loadNumbers[v.id]).length;
 
   return (
     <div className="bg-white shadow-sm rounded-lg overflow-hidden">
@@ -215,6 +223,10 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
               <MapPin className="w-4 h-4 text-blue-500" />
               <span className="text-blue-600">{destinationCount} with destinations</span>
             </div>
+            <div className="flex items-center space-x-1">
+              <FileText className="w-4 h-4 text-green-500" />
+              <span className="text-green-600">{loadNumberCount} with load numbers</span>
+            </div>
             <div className="text-gray-500">
               {vehicles.length} total
             </div>
@@ -236,6 +248,9 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Vehicle
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Load Number
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
@@ -291,6 +306,15 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                         </div>
                       </div>
                     </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <EditableLoadNumber
+                      vehicleId={vehicle.id}
+                      vehicleName={vehicle.truckNumber}
+                      initialLoadNumber={loadNumbers[vehicle.id]}
+                      onLoadNumberChange={onLoadNumberChange}
+                      className="min-w-0"
+                    />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <VehicleStatusBadge status={vehicle.status} />
@@ -359,7 +383,7 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                           {formatTimeAgo(vehicle.lastUpdate)}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {vehicle.lastUpdate.toLocaleTimeString()}
+                          {mapboxService.formatEasternTime(vehicle.lastUpdate)}
                         </div>
                       </div>
                     </div>
@@ -378,9 +402,10 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
             Showing {vehicles.length} vehicles • {validLocationCount} with valid locations
             {partialLocationCount > 0 && ` • ${partialLocationCount} with partial coordinates`}
             {destinationCount > 0 && ` • ${destinationCount} with destinations`}
+            {loadNumberCount > 0 && ` • ${loadNumberCount} with load numbers`}
           </div>
           <div>
-            Last refreshed: {new Date().toLocaleTimeString()}
+            Last refreshed: {mapboxService.getCurrentEasternTime()}
           </div>
         </div>
         {(partialLocationCount > 0 || noLocationCount > 0) && (

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Truck, Settings, RefreshCw, Wifi, WifiOff, Loader2 } from 'lucide-react';
+import { mapboxService } from '../../services/mapboxService';
 
 interface HeaderProps {
   onRefresh?: () => void;
@@ -49,6 +50,11 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
+  const formatLastUpdated = () => {
+    if (!lastUpdated) return '';
+    return mapboxService.formatEasternTime(lastUpdated);
+  };
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -59,7 +65,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <div>
               <h1 className="text-xl font-semibold text-gray-900">Fleet Tracker</h1>
-              <p className="text-sm text-gray-500">Real-time vehicle monitoring</p>
+              <p className="text-sm text-gray-500">Real-time vehicle monitoring (Eastern Time)</p>
             </div>
           </div>
           
@@ -74,7 +80,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             {lastUpdated && (
               <div className="text-sm text-gray-500">
-                Last updated: {lastUpdated.toLocaleTimeString()}
+                Last updated: {formatLastUpdated()}
               </div>
             )}
             

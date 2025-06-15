@@ -1,12 +1,18 @@
 import React from 'react';
 import { Vehicle, VehicleStatus } from '../../types';
-import { Truck, Activity, AlertTriangle, Clock } from 'lucide-react';
+import { Truck, Activity, AlertTriangle, Clock, MapPin, FileText } from 'lucide-react';
 
 interface StatsCardsProps {
   vehicles: Vehicle[];
+  destinationCount?: number;
+  loadNumberCount?: number;
 }
 
-export const StatsCards: React.FC<StatsCardsProps> = ({ vehicles }) => {
+export const StatsCards: React.FC<StatsCardsProps> = ({ 
+  vehicles, 
+  destinationCount = 0, 
+  loadNumberCount = 0 
+}) => {
   const stats = React.useMemo(() => {
     const total = vehicles.length;
     const moving = vehicles.filter(v => v.status === VehicleStatus.MOVING).length;
@@ -40,6 +46,20 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ vehicles }) => {
       textColor: 'text-yellow-600'
     },
     {
+      title: 'With Destinations',
+      value: destinationCount,
+      icon: MapPin,
+      color: 'bg-purple-500',
+      textColor: 'text-purple-600'
+    },
+    {
+      title: 'With Load Numbers',
+      value: loadNumberCount,
+      icon: FileText,
+      color: 'bg-emerald-500',
+      textColor: 'text-emerald-600'
+    },
+    {
       title: 'Stale Data',
       value: stats.stale,
       icon: Clock,
@@ -49,7 +69,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ vehicles }) => {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
       {cards.map((card, index) => (
         <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
