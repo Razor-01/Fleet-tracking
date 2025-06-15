@@ -11,9 +11,9 @@ The Fleet Tracking System is designed for fleet managers, dispatchers, and opera
 ### Key Features
 
 - **🔄 Real-Time Vehicle Tracking** - Live GPS locations with automatic refresh
-- **📅 Smart Appointment Management** - Natural language appointment parsing
-- **🛣️ Intelligent Distance Calculation** - Optimized API usage with caching
-- **⚠️ Late Tracking & Risk Analysis** - Proactive delivery monitoring
+- **📅 Smart Appointment Management** - Natural language appointment parsing with multiple appointments per vehicle
+- **🛣️ Intelligent Distance Calculation** - Optimized API usage with caching and 30-minute auto-refresh
+- **⚠️ Late Tracking & Risk Analysis** - Proactive delivery monitoring with visual filtering
 - **📱 Responsive Design** - Works on desktop, tablet, and mobile
 - **🔧 Comprehensive Configuration** - Flexible API and system settings
 
@@ -26,7 +26,7 @@ The Fleet Tracking System is designed for fleet managers, dispatchers, and opera
 - Optimize routes and schedules
 
 ### For Dispatchers
-- Assign and track delivery appointments
+- Assign and track delivery appointments directly in the main dashboard
 - Monitor vehicle locations and speeds
 - Manage load numbers and delivery schedules
 - Coordinate with drivers on delivery timing
@@ -166,14 +166,19 @@ The main dashboard provides:
 ### Managing Appointments
 
 1. **Add Appointment**
-   - Click on a vehicle's appointment cell
+   - Click on a vehicle's appointment cell in the main table
    - Enter location and time using natural language:
      - `06/16/2025 9AM`
      - `Tomorrow 2PM`
      - `Monday 9AM-2PM`
    - System automatically parses and validates
 
-2. **Track Status**
+2. **Multiple Appointments**
+   - Each vehicle can have multiple appointments
+   - Appointments are sorted chronologically
+   - Next appointment is highlighted prominently
+
+3. **Track Status**
    - Appointments show as Pending, Completed, or Missed
    - Late tracking analyzes delivery risk in real-time
    - Visual indicators show on-time, at-risk, or late status
@@ -193,6 +198,15 @@ The system automatically calculates distances every 30 minutes to conserve API u
 - Load numbers are automatically saved and persist across sessions
 - Visual indicators show which vehicles have assigned load numbers
 
+### Delivery Status Filtering
+
+Filter vehicles by delivery status:
+- **All Trucks** - Show all vehicles
+- **Late** - Vehicles past their appointment time
+- **At Risk** - Vehicles that may be late based on distance and time
+- **On Time** - Vehicles with sufficient time to reach appointments
+- **No Appointments** - Vehicles without scheduled deliveries
+
 ## 🏗️ Project Structure
 
 ```
@@ -202,7 +216,10 @@ src/
 │   │   ├── StatsCards.tsx
 │   │   ├── VehicleTable.tsx
 │   │   ├── DistanceControls.tsx
-│   │   └── LateTrackingFilter.tsx
+│   │   ├── LateTrackingFilter.tsx
+│   │   ├── DeliveryStatusDisplay.tsx
+│   │   ├── EditableLoadNumber.tsx
+│   │   └── VehicleStatusBadge.tsx
 │   ├── DeliveryManager/ # Appointment management
 │   │   └── MultipleDeliveryAppointments.tsx
 │   ├── Layout/          # Layout components

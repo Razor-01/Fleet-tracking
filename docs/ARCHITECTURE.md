@@ -59,7 +59,9 @@ src/components/
 │   ├── VehicleTable.tsx   # Main vehicle data table
 │   ├── DistanceControls.tsx # Distance calculation controls
 │   ├── LateTrackingFilter.tsx # Delivery status filtering
-│   └── DeliveryStatusDisplay.tsx # Status indicators
+│   ├── DeliveryStatusDisplay.tsx # Status indicators
+│   ├── EditableLoadNumber.tsx # Load number management
+│   └── VehicleStatusBadge.tsx # Vehicle status display
 ├── DeliveryManager/        # Appointment management
 │   └── MultipleDeliveryAppointments.tsx
 ├── Layout/                 # Layout components
@@ -323,7 +325,7 @@ App
 │   ├── ConnectionStatus
 │   ├── LastUpdated
 │   └── RefreshButton
-├── NavigationTabs
+├── NavigationTabs (Dashboard & Settings only)
 └── MainContent
     ├── Dashboard
     │   ├── DistanceControls
@@ -337,11 +339,9 @@ App
     │       │   ├── DistanceDisplay
     │       │   └── DeliveryStatusDisplay
     │       └── TableControls
-    ├── Settings
-    │   ├── ApiConfigPanel
-    │   └── SystemSettings
-    └── DeliveryManager
-        └── DeliveryAddressForm
+    └── Settings
+        ├── ApiConfigPanel
+        └── SystemSettings
 ```
 
 ### Component Communication

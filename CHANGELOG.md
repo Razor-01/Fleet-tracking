@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Smart Appointment Management**
   - Natural language appointment parsing (e.g., "Tomorrow 9AM", "06/16/2025 2PM")
-  - Multiple appointments per vehicle
+  - Multiple appointments per vehicle in the main dashboard
   - Appointment status tracking (pending, completed, missed)
   - Time range support (e.g., "9AM-2PM")
 
@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Comprehensive vehicle table with sortable columns
   - Real-time status indicators and visual feedback
   - Mobile-optimized design with touch-friendly interactions
+  - Integrated appointment management directly in the vehicle table
 
 - **Load Number Management**
   - Manual load number assignment and tracking
@@ -104,6 +105,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VS Code workspace configuration
 - GitHub Actions CI/CD pipeline
 
+### Removed
+- **Redundant Deliveries Tab**
+  - Removed separate deliveries page/tab
+  - Consolidated all delivery management into the main dashboard
+  - Simplified navigation to Dashboard and Settings only
+  - Removed DeliveryAddressForm component
+  - Cleaned up delivery destination management code
+
 ## [0.1.0] - 2024-01-01
 
 ### Added
@@ -125,6 +134,7 @@ This initial release provides a complete fleet tracking solution with:
 - **Cost-Effective**: Smart API usage management to stay within free tier limits
 - **Scalable**: Modular architecture that supports future enhancements
 - **Well-Documented**: Extensive documentation for users and developers
+- **Streamlined UI**: Single dashboard with integrated delivery management
 
 ### Upgrade Path
 
