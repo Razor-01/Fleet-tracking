@@ -21,17 +21,6 @@ export enum VehicleStatus {
   STALE = 'stale'
 }
 
-export interface DeliveryDestination {
-  id: string;
-  address: string;
-  coordinates: {
-    lat: number;
-    lon: number;
-  };
-  truckNumber: string;
-  createdAt: Date;
-}
-
 export interface APIConfig {
   id: string;
   provider: MapProvider;

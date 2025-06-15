@@ -6,7 +6,6 @@ import { LateTrackingFilter } from './components/Dashboard/LateTrackingFilter';
 import { DistanceControls } from './components/Dashboard/DistanceControls';
 import { ApiConfigPanel } from './components/Settings/ApiConfigPanel';
 import { SystemSettings } from './components/Settings/SystemSettings';
-import { DeliveryAddressForm } from './components/DeliveryManager/DeliveryAddressForm';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useLoadNumbers } from './hooks/useLoadNumbers';
 import { useDeliveryAppointments } from './hooks/useDeliveryAppointments';
@@ -21,10 +20,9 @@ import {
   APIConfig, 
   MotiveConfig, 
   SystemSettings as SystemSettingsType,
-  DeliveryDestination,
   MapProvider
 } from './types';
-import { Settings, Truck, MapPin, X, AlertCircle, FileText, Calendar } from 'lucide-react';
+import { Settings, Truck, X, AlertCircle, FileText, Calendar } from 'lucide-react';
 
 const DEFAULT_SYSTEM_SETTINGS: SystemSettingsType = {
   refreshInterval: 5,
@@ -50,11 +48,10 @@ function App() {
   const [motiveConfig, setMotiveConfig] = useLocalStorage<MotiveConfig>('motiveConfig', DEFAULT_MOTIVE_CONFIG);
   const [mapConfigs, setMapConfigs] = useLocalStorage<APIConfig[]>('mapConfigs', []);
   const [systemSettings, setSystemSettings] = useLocalStorage<SystemSettingsType>('systemSettings', DEFAULT_SYSTEM_SETTINGS);
-  const [deliveryDestinations, setDeliveryDestinations] = useLocalStorage<DeliveryDestination[]>('deliveryDestinations', []);
   
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'settings' | 'deliveries'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'settings'>('dashboard');
   const [settingsTab, setSettingsTab] = useState<'api' | 'system'>('api');
   const [error, setError] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'testing'>('disconnected');
@@ -201,37 +198,6 @@ function App() {
     }
   };
 
-  const handleDestinationAdd = async (destination: Omit<DeliveryDestination, 'id' | 'createdAt'>) => {
-    try {
-      // Geocode the address
-      const geocodeResult = await mappingApi.geocodeAddress(destination.address);
-      
-      if (geocodeResult) {
-        const newDestination: DeliveryDestination = {
-          id: Date.now().toString(),
-          address: destination.address,
-          coordinates: {
-            lat: geocodeResult.lat,
-            lon: geocodeResult.lon
-          },
-          truckNumber: destination.truckNumber,
-          createdAt: new Date()
-        };
-        
-        setDeliveryDestinations(prev => [...prev, newDestination]);
-      } else {
-        alert('Failed to geocode address. Please check the address and try again.');
-      }
-    } catch (error) {
-      console.error('Failed to add destination:', error);
-      alert('Failed to add destination. Please try again.');
-    }
-  };
-
-  const handleDestinationRemove = (id: string) => {
-    setDeliveryDestinations(prev => prev.filter(d => d.id !== id));
-  };
-
   const handleLoadNumberChange = (vehicleId: string, loadNumber: string) => {
     setLoadNumber(vehicleId, loadNumber);
   };
@@ -294,15 +260,6 @@ function App() {
               />
             )}
           </div>
-        );
-        
-      case 'deliveries':
-        return (
-          <DeliveryAddressForm
-            destinations={deliveryDestinations}
-            onDestinationAdd={handleDestinationAdd}
-            onDestinationRemove={handleDestinationRemove}
-          />
         );
         
       default:
@@ -501,7 +458,7 @@ function App() {
       />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Navigation Tabs */}
+        {/* Navigation Tabs - Only Dashboard and Settings */}
         <div className="mb-8">
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
@@ -515,17 +472,6 @@ function App() {
               >
                 <Truck className="w-4 h-4" />
                 <span>Dashboard</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('deliveries')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                  activeTab === 'deliveries'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <MapPin className="w-4 h-4" />
-                <span>Deliveries</span>
               </button>
               <button
                 onClick={() => setActiveTab('settings')}
