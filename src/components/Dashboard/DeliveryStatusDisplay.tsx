@@ -71,19 +71,28 @@ export const DeliveryStatusDisplay: React.FC<DeliveryStatusDisplayProps> = ({
         {/* Additional details based on status */}
         {analysis.status === 'late' && analysis.minutesLate && (
           <div className="mt-1 text-xs font-medium text-red-700">
-            {Math.round(analysis.minutesLate)} minutes overdue
+            {analysis.minutesLate < 60 
+              ? `${Math.round(analysis.minutesLate)} minutes overdue`
+              : `${Math.floor(analysis.minutesLate / 60)}h ${Math.round(analysis.minutesLate % 60)}m overdue`
+            }
           </div>
         )}
         
         {analysis.status === 'at_risk' && analysis.minutesShort && (
           <div className="mt-1 text-xs font-medium text-orange-700">
-            Need {Math.round(analysis.minutesShort)} more minutes
+            Need {analysis.minutesShort < 60 
+              ? `${Math.round(analysis.minutesShort)} more minutes`
+              : `${Math.floor(analysis.minutesShort / 60)}h ${Math.round(analysis.minutesShort % 60)}m more`
+            }
           </div>
         )}
         
         {analysis.status === 'on_time' && analysis.minutesAhead && (
           <div className="mt-1 text-xs font-medium text-green-700">
-            {Math.round(analysis.minutesAhead)} minutes buffer
+            {analysis.minutesAhead < 60 
+              ? `${Math.round(analysis.minutesAhead)} minutes buffer`
+              : `${Math.floor(analysis.minutesAhead / 60)}h ${Math.round(analysis.minutesAhead % 60)}m buffer`
+            }
           </div>
         )}
       </div>

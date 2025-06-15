@@ -20,6 +20,17 @@ interface FilterCategories {
 }
 
 class LateTrackingService {
+  // Format buffer time in hours and minutes for better readability
+  private formatBufferTime(totalMinutes: number): string {
+    if (totalMinutes < 60) {
+      return `${Math.round(totalMinutes)}m`;
+    } else {
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      return `${hours}h ${Math.round(minutes)}m`;
+    }
+  }
+
   // Analyze if truck is late or at risk
   analyzeTruckStatus(
     vehicle: Vehicle,
@@ -61,7 +72,7 @@ class LateTrackingService {
       const shortfall = totalRequiredTime - timeUntilAppointment;
       return {
         status: 'at_risk',
-        message: `At risk of being ${Math.round(shortfall)} minutes late`,
+        message: `At risk of being ${this.formatBufferTime(shortfall)} late`,
         minutesShort: shortfall,
         severity: shortfall > 60 ? 'high' : 'medium'
       };
@@ -69,7 +80,7 @@ class LateTrackingService {
       const cushion = timeUntilAppointment - totalRequiredTime;
       return {
         status: 'on_time',
-        message: `${Math.round(cushion)} minutes ahead of schedule`,
+        message: `${this.formatBufferTime(cushion)} ahead of schedule`,
         minutesAhead: cushion,
         severity: 'low'
       };
