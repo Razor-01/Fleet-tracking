@@ -1,13 +1,57 @@
 {
-  "name": "vite-react-typescript-starter",
-  "private": true,
-  "version": "0.0.0",
+  "name": "fleet-tracking-system",
+  "version": "1.0.0",
+  "description": "A comprehensive real-time fleet tracking web application with intelligent vehicle monitoring, delivery management, and late tracking capabilities.",
   "type": "module",
+  "keywords": [
+    "fleet-tracking",
+    "vehicle-monitoring",
+    "delivery-management",
+    "real-time-tracking",
+    "motive-api",
+    "mapbox",
+    "react",
+    "typescript",
+    "logistics",
+    "transportation"
+  ],
+  "author": {
+    "name": "Fleet Tracking Team",
+    "email": "team@fleettracking.com",
+    "url": "https://github.com/your-username/fleet-tracking-system"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/your-username/fleet-tracking-system#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/fleet-tracking-system.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/fleet-tracking-system/issues",
+    "email": "support@fleettracking.com"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "build": "tsc && vite build",
+    "build:prod": "NODE_ENV=production npm run build",
+    "build:analyze": "npm run build && npx vite-bundle-analyzer dist",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --ext ts,tsx --fix",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "test:ui": "vitest --ui",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "clean": "rm -rf dist node_modules/.cache",
+    "prepare": "husky install",
+    "postinstall": "npm run type-check"
   },
   "dependencies": {
     "lucide-react": "^0.344.0",
@@ -16,18 +60,55 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@testing-library/jest-dom": "^6.1.4",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/user-event": "^14.5.1",
+    "@types/node": "^20.8.0",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "@vitest/coverage-v8": "^0.34.6",
+    "@vitest/ui": "^0.34.6",
     "autoprefixer": "^10.4.18",
     "eslint": "^9.9.1",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.11",
     "globals": "^15.9.0",
+    "husky": "^8.0.3",
+    "jsdom": "^22.1.0",
+    "lint-staged": "^15.0.2",
     "postcss": "^8.4.35",
+    "prettier": "^3.0.3",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.3.0",
-    "vite": "^5.4.2"
+    "vite": "^5.4.2",
+    "vite-bundle-analyzer": "^0.7.0",
+    "vitest": "^0.34.6"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,md}": [
+      "prettier --write"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/your-username"
   }
 }
