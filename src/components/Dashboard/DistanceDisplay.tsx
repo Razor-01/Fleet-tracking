@@ -1,5 +1,6 @@
 import React from 'react';
 import { Route, Clock, Navigation, Loader2, AlertTriangle } from 'lucide-react';
+import { deliveryAppointmentsService } from '../../services/deliveryAppointmentsService';
 
 interface DistanceDisplayProps {
   distance?: {
@@ -25,7 +26,7 @@ export const DistanceDisplay: React.FC<DistanceDisplayProps> = ({
     return (
       <div className={`text-center text-gray-500 ${className}`}>
         <div className="text-sm">-</div>
-        <div className="text-xs">No destination</div>
+        <div className="text-xs">No appointment</div>
       </div>
     );
   }
@@ -45,7 +46,7 @@ export const DistanceDisplay: React.FC<DistanceDisplayProps> = ({
     return (
       <div className={`text-center text-gray-500 ${className}`}>
         <div className="text-sm">-</div>
-        <div className="text-xs">No data</div>
+        <div className="text-xs">No route</div>
       </div>
     );
   }

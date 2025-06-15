@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Vehicle } from '../types';
 import { mapboxService } from '../services/mapboxService';
-import { DestinationData } from '../components/Dashboard/EditableDestination';
+import { DeliveryAppointment, deliveryAppointmentsService } from '../services/deliveryAppointmentsService';
 
 interface DistanceResult {
   distanceMiles: string;
@@ -12,9 +12,9 @@ interface DistanceResult {
   error?: string;
 }
 
-export const useDistanceCalculation = (
+export const useAppointmentDistanceCalculation = (
   vehicles: Vehicle[],
-  destinations: Record<string, DestinationData & { updatedAt: string }>
+  appointments: Record<string, DeliveryAppointment[]>
 ) => {
   const [distances, setDistances] = useState<Record<string, DistanceResult>>({});
   const [calculatingDistances, setCalculatingDistances] = useState<Set<string>>(new Set());
@@ -23,11 +23,14 @@ export const useDistanceCalculation = (
     vehicleId: string,
     fromLat: number,
     fromLng: number,
-    toLat: number,
-    toLng: number
+    appointmentLocation: string
   ): Promise<DistanceResult | null> => {
     try {
-      const result = await mapboxService.calculateDistance(fromLat, fromLng, toLat, toLng);
+      // First geocode the appointment location
+      const geocoded = await mapboxService.geocodeAddress(appointmentLocation);
+      
+      // Then calculate distance
+      const result = await mapboxService.calculateDistance(fromLat, fromLng, geocoded.lat, geocoded.lng);
       return {
         distanceMiles: result.distanceMiles,
         distanceKm: result.distanceKm,
@@ -50,25 +53,25 @@ export const useDistanceCalculation = (
 
   const calculateAllDistances = useCallback(async () => {
     const newDistances: Record<string, DistanceResult> = { ...distances };
-    const vehiclesToCalculate: Array<{ vehicle: Vehicle; destination: DestinationData }> = [];
+    const vehiclesToCalculate: Array<{ vehicle: Vehicle; appointmentLocation: string }> = [];
 
     // Identify vehicles that need distance calculation
     for (const vehicle of vehicles) {
-      const destination = destinations[vehicle.id];
+      const nextAppointment = deliveryAppointmentsService.getNextAppointment(vehicle.id);
       
-      if (destination && 
+      if (nextAppointment && 
           vehicle.currentLocation.lat !== 0 && 
           vehicle.currentLocation.lon !== 0 &&
           !calculatingDistances.has(vehicle.id)) {
         
-        // Check if we need to recalculate (vehicle moved significantly or destination changed)
+        // Check if we need to recalculate (vehicle moved significantly or appointment changed)
         const existingDistance = distances[vehicle.id];
         const shouldRecalculate = !existingDistance || 
           Math.abs(vehicle.currentLocation.lat - (vehicle as any).lastCalculatedLat || 0) > 0.001 ||
           Math.abs(vehicle.currentLocation.lon - (vehicle as any).lastCalculatedLon || 0) > 0.001;
 
         if (shouldRecalculate) {
-          vehiclesToCalculate.push({ vehicle, destination });
+          vehiclesToCalculate.push({ vehicle, appointmentLocation: nextAppointment.location });
         }
       }
     }
@@ -77,7 +80,7 @@ export const useDistanceCalculation = (
       return;
     }
 
-    console.log(`🛣️ Calculating distances for ${vehiclesToCalculate.length} vehicles`);
+    console.log(`🛣️ Calculating distances to appointments for ${vehiclesToCalculate.length} vehicles`);
 
     // Update calculating state
     setCalculatingDistances(prev => {
@@ -88,7 +91,7 @@ export const useDistanceCalculation = (
 
     // Calculate distances with rate limiting
     for (let i = 0; i < vehiclesToCalculate.length; i++) {
-      const { vehicle, destination } = vehiclesToCalculate[i];
+      const { vehicle, appointmentLocation } = vehiclesToCalculate[i];
       
       try {
         // Add delay between requests to respect rate limits
@@ -100,8 +103,7 @@ export const useDistanceCalculation = (
           vehicle.id,
           vehicle.currentLocation.lat,
           vehicle.currentLocation.lon,
-          destination.coordinates.lat,
-          destination.coordinates.lng
+          appointmentLocation
         );
 
         if (distanceResult) {
@@ -134,9 +136,9 @@ export const useDistanceCalculation = (
     });
 
     console.log(`✅ Distance calculations complete for ${vehiclesToCalculate.length} vehicles`);
-  }, [vehicles, destinations, distances, calculatingDistances, calculateDistance]);
+  }, [vehicles, appointments, distances, calculatingDistances, calculateDistance]);
 
-  // Trigger distance calculations when vehicles or destinations change
+  // Trigger distance calculations when vehicles or appointments change
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       calculateAllDistances();
@@ -153,14 +155,15 @@ export const useDistanceCalculation = (
     return calculatingDistances.has(vehicleId);
   }, [calculatingDistances]);
 
-  const hasDestination = useCallback((vehicleId: string): boolean => {
-    return !!destinations[vehicleId];
-  }, [destinations]);
+  const hasAppointment = useCallback((vehicleId: string): boolean => {
+    const nextAppointment = deliveryAppointmentsService.getNextAppointment(vehicleId);
+    return !!nextAppointment;
+  }, []);
 
   return {
     getDistance,
     isCalculating,
-    hasDestination,
+    hasAppointment,
     calculateAllDistances
   };
 };

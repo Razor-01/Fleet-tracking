@@ -7,15 +7,13 @@ import { ApiConfigPanel } from './components/Settings/ApiConfigPanel';
 import { SystemSettings } from './components/Settings/SystemSettings';
 import { DeliveryAddressForm } from './components/DeliveryManager/DeliveryAddressForm';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { useDestinations } from './hooks/useDestinations';
-import { useDistanceCalculation } from './hooks/useDistanceCalculation';
 import { useLoadNumbers } from './hooks/useLoadNumbers';
 import { useDeliveryAppointments } from './hooks/useDeliveryAppointments';
+import { useAppointmentDistanceCalculation } from './hooks/useAppointmentDistanceCalculation';
 import { motiveApi } from './services/motiveApi';
 import { mappingApi } from './services/mappingApi';
 import { mapboxService } from './services/mapboxService';
 import { lateTrackingService, FilterCategories } from './services/lateTrackingService';
-import { DestinationData } from './components/Dashboard/EditableDestination';
 import { DeliveryAppointment } from './services/deliveryAppointmentsService';
 import { 
   Vehicle, 
@@ -62,17 +60,14 @@ function App() {
   const [activeFilter, setActiveFilter] = useState<keyof FilterCategories>('all');
   const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
 
-  // Use destination management hook
-  const { destinations, setDestination, getDestination, getDestinationStats } = useDestinations();
-
   // Use load number management hook
   const { loadNumbers, setLoadNumber, getLoadNumber, getLoadNumberStats } = useLoadNumbers();
 
-  // Use distance calculation hook
-  const { getDistance, isCalculating, hasDestination } = useDistanceCalculation(vehicles, destinations);
-
   // Use delivery appointments hook
   const { appointments, setVehicleAppointments, getVehicleAppointments, getNextAppointment, getAppointmentStats } = useDeliveryAppointments();
+
+  // Use appointment-based distance calculation hook
+  const { getDistance, isCalculating, hasAppointment } = useAppointmentDistanceCalculation(vehicles, appointments);
 
   // Initialize services
   useEffect(() => {
@@ -165,7 +160,6 @@ function App() {
       const fetchedVehicles = await motiveApi.getVehiclesWithLocations();
       console.log(`Successfully fetched ${fetchedVehicles.length} vehicles:`, fetchedVehicles);
       
-      // Update vehicles without distance calculation (handled by useDistanceCalculation hook)
       setVehicles(fetchedVehicles);
       setLastUpdated(new Date());
       setConnectionStatus('connected');
@@ -237,10 +231,6 @@ function App() {
     setDeliveryDestinations(prev => prev.filter(d => d.id !== id));
   };
 
-  const handleDestinationChange = (vehicleId: string, destinationData: DestinationData | null) => {
-    setDestination(vehicleId, destinationData);
-  };
-
   const handleLoadNumberChange = (vehicleId: string, loadNumber: string) => {
     setLoadNumber(vehicleId, loadNumber);
   };
@@ -250,10 +240,8 @@ function App() {
   };
 
   // Get statistics for display
-  const destinationStats = getDestinationStats();
   const loadNumberStats = getLoadNumberStats();
   const appointmentStats = getAppointmentStats();
-  const destinationCount = vehicles.filter(v => hasDestination(v.id)).length;
   const loadNumberCount = vehicles.filter(v => loadNumbers[v.id]).length;
   const appointmentCount = Object.keys(appointments).length;
 
@@ -405,21 +393,7 @@ function App() {
 
             {/* Feature Statistics */}
             {vehicles.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <MapPin className="h-5 w-5 text-green-400" />
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm text-green-800">
-                        {destinationCount} destinations configured • 
-                        Mapbox distance calculation enabled
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
@@ -476,7 +450,7 @@ function App() {
             
             <StatsCards 
               vehicles={vehicles} 
-              destinationCount={destinationCount}
+              destinationCount={0}
               loadNumberCount={loadNumberCount}
               appointmentCount={appointmentCount}
               lateCount={lateTrackingService.getFilterCategories(vehicles, appointments, getDistance).late.length}
@@ -485,13 +459,11 @@ function App() {
             <VehicleTable 
               vehicles={filteredVehicles} 
               isRefreshing={isRefreshing}
-              destinations={destinations}
-              onDestinationChange={handleDestinationChange}
               loadNumbers={loadNumbers}
               onLoadNumberChange={handleLoadNumberChange}
               getDistance={getDistance}
               isCalculatingDistance={isCalculating}
-              hasDestination={hasDestination}
+              hasAppointment={hasAppointment}
               appointments={appointments}
               onAppointmentsChange={handleAppointmentsChange}
               getNextAppointment={getNextAppointment}

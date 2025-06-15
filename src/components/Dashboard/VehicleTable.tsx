@@ -1,7 +1,6 @@
 import React from 'react';
 import { Vehicle } from '../../types';
 import { VehicleStatusBadge } from './VehicleStatusBadge';
-import { EditableDestination, DestinationData } from './EditableDestination';
 import { EditableLoadNumber } from './EditableLoadNumber';
 import { DistanceDisplay } from './DistanceDisplay';
 import { MultipleDeliveryAppointments } from '../DeliveryManager/MultipleDeliveryAppointments';
@@ -15,13 +14,11 @@ interface VehicleTableProps {
   vehicles: Vehicle[];
   onVehicleClick?: (vehicle: Vehicle) => void;
   isRefreshing?: boolean;
-  destinations: Record<string, DestinationData & { updatedAt: string }>;
-  onDestinationChange: (vehicleId: string, destination: DestinationData | null) => void;
   loadNumbers: Record<string, string>;
   onLoadNumberChange: (vehicleId: string, loadNumber: string) => void;
   getDistance: (vehicleId: string) => any;
   isCalculatingDistance: (vehicleId: string) => boolean;
-  hasDestination: (vehicleId: string) => boolean;
+  hasAppointment: (vehicleId: string) => boolean;
   appointments: Record<string, DeliveryAppointment[]>;
   onAppointmentsChange: (vehicleId: string, appointments: DeliveryAppointment[]) => void;
   getNextAppointment: (vehicleId: string) => DeliveryAppointment | null;
@@ -31,13 +28,11 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
   vehicles,
   onVehicleClick,
   isRefreshing = false,
-  destinations,
-  onDestinationChange,
   loadNumbers,
   onLoadNumberChange,
   getDistance,
   isCalculatingDistance,
-  hasDestination,
+  hasAppointment,
   appointments,
   onAppointmentsChange,
   getNextAppointment
@@ -159,8 +154,7 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
         latitudeRange: lat >= -90 && lat <= 90,
         longitudeRange: lon >= -180 && lon <= 180,
         address: vehicle.currentLocation.address,
-        hasDestination: hasDestination(vehicle.id),
-        destination: destinations[vehicle.id]?.formattedAddress,
+        hasAppointment: hasAppointment(vehicle.id),
         loadNumber: loadNumbers[vehicle.id],
         distance: getDistance(vehicle.id),
         appointments: appointments[vehicle.id]?.length || 0,
@@ -207,8 +201,7 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
     v.currentLocation.lat === 0 && v.currentLocation.lon === 0
   ).length;
 
-  // Count vehicles with destinations, load numbers, and appointments
-  const destinationCount = vehicles.filter(v => hasDestination(v.id)).length;
+  // Count vehicles with load numbers and appointments
   const loadNumberCount = vehicles.filter(v => loadNumbers[v.id]).length;
   const appointmentCount = vehicles.filter(v => appointments[v.id]?.length > 0).length;
 
@@ -234,10 +227,6 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                 <span className="text-red-600">{noLocationCount} no location</span>
               </div>
             )}
-            <div className="flex items-center space-x-1">
-              <MapPin className="w-4 h-4 text-blue-500" />
-              <span className="text-blue-600">{destinationCount} with destinations</span>
-            </div>
             <div className="flex items-center space-x-1">
               <FileText className="w-4 h-4 text-green-500" />
               <span className="text-green-600">{loadNumberCount} with load numbers</span>
@@ -279,9 +268,6 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Speed
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Destination
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Delivery Appointments
@@ -391,15 +377,6 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <EditableDestination
-                      vehicleId={vehicle.id}
-                      vehicleName={vehicle.truckNumber}
-                      initialDestination={destinations[vehicle.id]?.formattedAddress}
-                      onDestinationChange={onDestinationChange}
-                      className="min-w-0"
-                    />
-                  </td>
-                  <td className="px-6 py-4">
                     <MultipleDeliveryAppointments
                       vehicleId={vehicle.id}
                       vehicleName={vehicle.truckNumber}
@@ -411,7 +388,8 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                     <DistanceDisplay
                       distance={getDistance(vehicle.id)}
                       isCalculating={isCalculatingDistance(vehicle.id)}
-                      hasDestination={hasDestination(vehicle.id)}
+                      hasDestination={hasAppointment(vehicle.id)}
+                      className="min-w-0"
                     />
                   </td>
                   <td className="px-6 py-4">
@@ -447,7 +425,6 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
           <div>
             Showing {vehicles.length} vehicles • {validLocationCount} with valid locations
             {partialLocationCount > 0 && ` • ${partialLocationCount} with partial coordinates`}
-            {destinationCount > 0 && ` • ${destinationCount} with destinations`}
             {loadNumberCount > 0 && ` • ${loadNumberCount} with load numbers`}
             {appointmentCount > 0 && ` • ${appointmentCount} with appointments`}
           </div>
