@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, RenderOptions } from '@testing-library/react';
+import { vi } from 'vitest';
 import { Vehicle, VehicleStatus } from '../types';
 import { DeliveryAppointment } from '../services/deliveryAppointmentsService';
 
@@ -46,7 +47,12 @@ export const createMockVehicles = (count: number = 3): Vehicle[] => {
     createMockVehicle({
       id: `vehicle-${index + 1}`,
       truckNumber: `Truck ${String(index + 1).padStart(3, '0')}`,
-      status: index % 2 === 0 ? VehicleStatus.MOVING : VehicleStatus.IDLE
+      status: index % 2 === 0 ? VehicleStatus.MOVING : VehicleStatus.IDLE,
+      currentLocation: {
+        lat: 40.7128 + (index * 0.01),
+        lon: -74.0060 + (index * 0.01),
+        address: `Location ${index + 1}`
+      }
     })
   );
 };
@@ -167,6 +173,64 @@ export class TestErrorBoundary extends React.Component<
     return this.props.children;
   }
 }
+
+// Mock API helpers
+export const setupMockApis = (scenario?: any) => {
+  // Setup default mocks that can be overridden by scenario
+  const defaultVehicles = createMockVehicles(3);
+  
+  global.fetch = vi.fn().mockImplementation((url: string) => {
+    if (url.includes('vehicle_locations')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          vehicles: scenario?.vehicles || defaultVehicles.map(v => ({
+            id: v.id,
+            number: v.truckNumber,
+            current_location: {
+              lat: v.currentLocation.lat,
+              lon: v.currentLocation.lon,
+              located_at: v.lastUpdate.toISOString(),
+              speed: v.speed
+            }
+          }))
+        })
+      });
+    }
+    
+    if (url.includes('geocoding')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(mockMapboxGeocodingResponse)
+      });
+    }
+    
+    if (url.includes('directions')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(mockMapboxDirectionsResponse)
+      });
+    }
+    
+    return Promise.reject(new Error('Unknown API endpoint'));
+  });
+};
+
+// Generate large datasets for performance testing
+export const generateMockTruckData = (count: number): Vehicle[] => {
+  return Array.from({ length: count }, (_, i) => ({
+    id: `vehicle-${i + 1}`,
+    truckNumber: `T${String(i + 1).padStart(3, '0')}`,
+    currentLocation: {
+      lat: 40.7128 + (Math.random() - 0.5) * 0.1,
+      lon: -74.0060 + (Math.random() - 0.5) * 0.1,
+      address: `Location ${i + 1}`
+    },
+    speed: Math.random() * 70,
+    lastUpdate: new Date(Date.now() - Math.random() * 60 * 60 * 1000),
+    status: [VehicleStatus.MOVING, VehicleStatus.IDLE, VehicleStatus.STATIONARY][Math.floor(Math.random() * 3)]
+  }));
+};
 
 // Re-export everything from testing-library
 export * from '@testing-library/react';

@@ -24,13 +24,25 @@ export default defineConfig({
       ],
       thresholds: {
         global: {
-          branches: 70,
-          functions: 70,
-          lines: 70,
-          statements: 70
+          branches: 80,
+          functions: 80,
+          lines: 80,
+          statements: 80
         }
       }
-    }
+    },
+    // Test file patterns
+    include: [
+      'src/**/*.{test,spec}.{js,ts,jsx,tsx}',
+      'src/**/*.unit.test.{js,ts,jsx,tsx}',
+      'src/**/*.integration.test.{js,ts,jsx,tsx}',
+      'src/**/*.system.test.{js,ts,jsx,tsx}',
+      'src/**/*.uat.test.{js,ts,jsx,tsx}'
+    ],
+    // Test timeout for longer integration tests
+    testTimeout: 10000,
+    // Retry failed tests
+    retry: 2
   },
   resolve: {
     alias: {

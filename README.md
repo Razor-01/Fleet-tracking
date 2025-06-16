@@ -16,6 +16,7 @@ The Fleet Tracking System is designed for fleet managers, dispatchers, and opera
 - **⚠️ Late Tracking & Risk Analysis** - Proactive delivery monitoring with visual filtering
 - **📱 Responsive Design** - Works on desktop, tablet, and mobile
 - **🔧 Comprehensive Configuration** - Flexible API and system settings
+- **🧪 Comprehensive Testing** - Full test suite with Unit, Integration, System, and UAT tests
 
 ## 🎯 Use Cases
 
@@ -57,6 +58,12 @@ The Fleet Tracking System is designed for fleet managers, dispatchers, and opera
 - **Local Storage** - Persistent data storage for settings and cache
 - **Real-time Sync** - Coordinated state updates across components
 
+### Testing Framework
+- **Vitest** - Fast unit test runner with TypeScript support
+- **Testing Library** - React component testing utilities
+- **MSW** - Mock Service Worker for API testing
+- **User Event** - Realistic user interaction testing
+
 ### Development Tools
 - **ESLint** - Code linting and quality enforcement
 - **PostCSS** - CSS processing and optimization
@@ -97,6 +104,82 @@ The Fleet Tracking System is designed for fleet managers, dispatchers, and opera
    ```
    http://localhost:5173
    ```
+
+## 🧪 Testing
+
+The Fleet Tracking System includes a comprehensive testing suite covering all aspects of the application:
+
+### Test Types
+
+#### Unit Tests
+- **Component Tests** - Individual React component functionality
+- **Service Tests** - Business logic and API integration services
+- **Hook Tests** - Custom React hooks behavior
+- **Utility Tests** - Helper functions and utilities
+
+#### Integration Tests
+- **API Integration** - Real API endpoint testing with MSW
+- **localStorage Integration** - Data persistence and retrieval
+- **Service Integration** - Cross-service communication
+
+#### System Tests
+- **End-to-End Workflows** - Complete user journeys
+- **Performance Tests** - Large dataset handling and response times
+- **Error Handling** - Graceful failure and recovery scenarios
+
+#### User Acceptance Tests (UAT)
+- **Fleet Manager Workflows** - Morning reviews, risk management, customer service
+- **Dispatcher Workflows** - Route planning, schedule changes, load assignment
+- **Operations Team Workflows** - Performance monitoring, compliance, data integrity
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run specific test types
+npm run test:unit          # Unit tests only
+npm run test:integration   # Integration tests only
+npm run test:system        # System tests only
+npm run test:uat          # User acceptance tests only
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with UI
+npm run test:ui
+```
+
+### Test Coverage
+
+The project maintains high test coverage standards:
+- **Branches**: 80%+
+- **Functions**: 80%+
+- **Lines**: 80%+
+- **Statements**: 80%+
+
+### Test Structure
+
+```
+src/__tests__/
+├── unit/                    # Unit tests
+│   ├── components/         # Component tests
+│   ├── services/          # Service tests
+│   └── hooks/             # Hook tests
+├── integration/            # Integration tests
+│   ├── motiveApi.integration.test.ts
+│   └── localStorage.integration.test.ts
+├── system/                 # System tests
+│   └── endToEndWorkflow.system.test.tsx
+└── uat/                    # User acceptance tests
+    ├── fleetManagerWorkflow.uat.test.tsx
+    ├── dispatcherWorkflow.uat.test.tsx
+    └── operationsTeamWorkflow.uat.test.tsx
+```
 
 ## 📖 Detailed Setup Guide
 
@@ -242,6 +325,11 @@ src/
 ├── types/               # TypeScript type definitions
 │   └── index.ts
 ├── utils/               # Helper functions
+├── __tests__/           # Comprehensive test suite
+│   ├── unit/           # Unit tests
+│   ├── integration/    # Integration tests
+│   ├── system/         # System tests
+│   └── uat/            # User acceptance tests
 └── styles/              # CSS and styling
     └── index.css
 ```
@@ -288,6 +376,12 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for production deployment guide.
 - Use supported date formats: `MM/DD/YYYY HH:MM AM/PM`
 - Examples: `06/16/2025 9AM`, `Tomorrow 2PM`
 - Check browser console for parsing errors
+
+#### Test failures
+- Ensure all dependencies are installed: `npm install`
+- Clear test cache: `npm run clean`
+- Check for environment-specific issues
+- Review test logs for specific error details
 
 ### Debug Tools
 
@@ -337,6 +431,15 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 - Add JSDoc comments for public functions
 - Include unit tests for new features
 - Update documentation as needed
+- Maintain test coverage above 80%
+
+### Testing Guidelines
+
+- Write tests for all new features
+- Follow the existing test structure
+- Use descriptive test names
+- Mock external dependencies appropriately
+- Test both happy path and error scenarios
 
 ## 🎯 Roadmap
 
@@ -369,6 +472,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **React Team** - Amazing frontend framework
 - **Tailwind CSS** - Utility-first CSS framework
 - **Lucide** - Beautiful icon library
+- **Vitest** - Fast and reliable testing framework
 
 ## 📞 Support
 
