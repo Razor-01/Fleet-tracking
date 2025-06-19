@@ -23,6 +23,7 @@ import {
   MapProvider
 } from './types';
 import { Settings, Truck, X, AlertCircle, FileText, Calendar } from 'lucide-react';
+import VehicleFilters from './components/Dashboard/VehicleFilters';
 
 const DEFAULT_SYSTEM_SETTINGS: SystemSettingsType = {
   refreshInterval: 5,
@@ -45,6 +46,7 @@ const DEFAULT_MOTIVE_CONFIG: MotiveConfig = {
 
 function App() {
   const [vehicles, setVehicles] = useLocalStorage<Vehicle[]>('vehicles', []);
+  const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
   const [motiveConfig, setMotiveConfig] = useLocalStorage<MotiveConfig>('motiveConfig', DEFAULT_MOTIVE_CONFIG);
   const [mapConfigs, setMapConfigs] = useLocalStorage<APIConfig[]>('mapConfigs', []);
   const [systemSettings, setSystemSettings] = useLocalStorage<SystemSettingsType>('systemSettings', DEFAULT_SYSTEM_SETTINGS);
@@ -55,8 +57,15 @@ function App() {
   const [settingsTab, setSettingsTab] = useState<'api' | 'system'>('api');
   const [error, setError] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'testing'>('disconnected');
-  const [activeFilter, setActiveFilter] = useState<keyof FilterCategories>('all');
-  const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
+  
+  // Filter state
+  const [activeFilters, setActiveFilters] = useLocalStorage('fleet_tracker_filters', {
+    status: 'all_status',
+    location: 'all_locations',
+    delivery: 'all_deliveries',
+    load: 'all_loads'
+  });
+  const [searchTerm, setSearchTerm] = useLocalStorage('fleet_tracker_search', '');
 
   // Use load number management hook
   const { loadNumbers, setLoadNumber, getLoadNumber, getLoadNumberStats } = useLoadNumbers();
@@ -114,9 +123,102 @@ function App() {
 
   // Apply filtering when vehicles, appointments, or filter changes
   useEffect(() => {
-    const categories = lateTrackingService.getFilterCategories(vehicles, appointments, getDistance);
-    setFilteredVehicles(categories[activeFilter] || []);
-  }, [vehicles, appointments, activeFilter, getDistance]);
+    applyFilters();
+  }, [vehicles, appointments, activeFilters, searchTerm, loadNumbers]);
+
+  const applyFilters = useCallback(() => {
+    let filtered = [...vehicles];
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(vehicle => 
+        vehicle.truckNumber.toLowerCase().includes(searchLower) ||
+        vehicle.id.toLowerCase().includes(searchLower) ||
+        (loadNumbers[vehicle.id] && loadNumbers[vehicle.id].toLowerCase().includes(searchLower)) ||
+        (vehicle.currentLocation.address && vehicle.currentLocation.address.toLowerCase().includes(searchLower)) ||
+        (appointments[vehicle.id] && appointments[vehicle.id].some(apt => 
+          apt.location.toLowerCase().includes(searchLower)
+        ))
+      );
+    }
+
+    // Apply status filter
+    if (activeFilters.status !== 'all_status') {
+      filtered = filtered.filter(vehicle => {
+        switch (activeFilters.status) {
+          case 'moving':
+            return vehicle.status === 'moving';
+          case 'idle':
+            return vehicle.status === 'idle';
+          case 'stationary':
+            return vehicle.status === 'stationary';
+          case 'stale':
+            return vehicle.status === 'stale';
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Apply location filter
+    if (activeFilters.location !== 'all_locations') {
+      filtered = filtered.filter(vehicle => {
+        switch (activeFilters.location) {
+          case 'with_location':
+            return vehicle.currentLocation.lat !== 0 && vehicle.currentLocation.lon !== 0;
+          case 'no_location':
+            return vehicle.currentLocation.lat === 0 && vehicle.currentLocation.lon === 0;
+          case 'partial_coords':
+            return (vehicle.currentLocation.lat !== 0 && vehicle.currentLocation.lon === 0) || 
+                   (vehicle.currentLocation.lat === 0 && vehicle.currentLocation.lon !== 0);
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Apply delivery status filter  
+    if (activeFilters.delivery !== 'all_deliveries') {
+      filtered = filtered.filter(vehicle => {
+        const vehicleAppointments = appointments[vehicle.id] || [];
+        const deliveryStatus = lateTrackingService.analyzeTruckStatus(
+          vehicle, 
+          vehicleAppointments, 
+          getDistance(vehicle.id)
+        );
+        
+        switch (activeFilters.delivery) {
+          case 'late':
+            return deliveryStatus.status === 'late';
+          case 'at_risk':
+            return deliveryStatus.status === 'at_risk';
+          case 'on_time':
+            return deliveryStatus.status === 'on_time';
+          case 'no_appointments':
+            return !appointments[vehicle.id] || appointments[vehicle.id].length === 0;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Apply load filter
+    if (activeFilters.load !== 'all_loads') {
+      filtered = filtered.filter(vehicle => {
+        switch (activeFilters.load) {
+          case 'with_load_numbers':
+            return !!loadNumbers[vehicle.id];
+          case 'no_load_numbers':
+            return !loadNumbers[vehicle.id];
+          default:
+            return true;
+        }
+      });
+    }
+
+    setFilteredVehicles(filtered);
+  }, [vehicles, appointments, activeFilters, searchTerm, loadNumbers, getDistance]);
 
   const testAndRefresh = async () => {
     if (!motiveConfig.apiKey || isRefreshing) {
@@ -204,6 +306,27 @@ function App() {
 
   const handleAppointmentsChange = (vehicleId: string, newAppointments: DeliveryAppointment[]) => {
     setVehicleAppointments(vehicleId, newAppointments);
+  };
+
+  const handleFilterChange = (filterType: string, filterValue: string) => {
+    if (filterType === 'clear') {
+      setActiveFilters({
+        status: 'all_status',
+        location: 'all_locations',
+        delivery: 'all_deliveries',
+        load: 'all_loads'
+      });
+      setSearchTerm('');
+    } else {
+      setActiveFilters(prev => ({
+        ...prev,
+        [filterType]: filterValue
+      }));
+    }
+  };
+
+  const handleSearchChange = (term: string) => {
+    setSearchTerm(term);
   };
 
   // Get statistics for display
@@ -318,7 +441,7 @@ function App() {
                       <button
                         onClick={testAndRefresh}
                         disabled={isRefreshing}
-                        className="inline-flex items-center px-3 py-1 border border-yellow-300 rounded-md text-sm font-medium text-yellow-700 bg-white hover:bg-yellow-50 disabled:opacity-50"
+                        className="inline-flex items-center px-3 py-1 border border-yellow-300 rounded-md text-sm font-medium text-yellow-700 bg-white hover:bg-yellow-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         Retry Connection
                       </button>
@@ -350,6 +473,33 @@ function App() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Vehicle Filters */}
+            {vehicles.length > 0 && (
+              <VehicleFilters
+                vehicles={vehicles}
+                activeFilters={activeFilters}
+                onFilterChange={handleFilterChange}
+                searchTerm={searchTerm}
+                onSearchChange={handleSearchChange}
+                loadNumbers={loadNumbers}
+                appointments={appointments}
+                getDeliveryStatus={(vehicleId) => {
+                  const vehicleAppointments = appointments[vehicleId] || [];
+                  return lateTrackingService.analyzeTruckStatus(
+                    vehicles.find(v => v.id === vehicleId) as Vehicle,
+                    vehicleAppointments,
+                    getDistance(vehicleId)
+                  );
+                }}
+                isStaleData={(date) => {
+                  const updateTime = new Date(date);
+                  const now = new Date();
+                  const minutesSinceUpdate = (now.getTime() - updateTime.getTime()) / (1000 * 60);
+                  return minutesSinceUpdate > 30;
+                }}
+              />
             )}
 
             {/* Distance Calculation Controls */}
@@ -410,25 +560,14 @@ function App() {
                 </div>
               </div>
             )}
-
-            {/* Late Tracking Filter */}
-            {vehicles.length > 0 && (
-              <LateTrackingFilter
-                vehicles={vehicles}
-                appointments={appointments}
-                distances={getDistance}
-                onFilterChange={setActiveFilter}
-                activeFilter={activeFilter}
-              />
-            )}
             
             <StatsCards 
-              vehicles={vehicles} 
+              vehicles={filteredVehicles} 
               destinationCount={0}
-              loadNumberCount={loadNumberCount}
-              appointmentCount={appointmentCount}
-              lateCount={lateTrackingService.getFilterCategories(vehicles, appointments, getDistance).late.length}
-              atRiskCount={lateTrackingService.getFilterCategories(vehicles, appointments, getDistance).at_risk.length}
+              loadNumberCount={filteredVehicles.filter(v => loadNumbers[v.id]).length}
+              appointmentCount={filteredVehicles.filter(v => appointments[v.id] && appointments[v.id].length > 0).length}
+              lateCount={lateTrackingService.getFilterCategories(filteredVehicles, appointments, getDistance).late.length}
+              atRiskCount={lateTrackingService.getFilterCategories(filteredVehicles, appointments, getDistance).at_risk.length}
             />
             <VehicleTable 
               vehicles={filteredVehicles} 

@@ -72,6 +72,130 @@
   margin-top: 2px;
 }
 
+/* Filter Panel Styles */
+.filter-panel {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #dee2e6;
+}
+
+.vehicle-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filter-section h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 2px solid;
+  border-radius: 20px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.filter-btn.active {
+  color: white !important;
+}
+
+.filter-icon {
+  font-size: 14px;
+}
+
+.filter-count {
+  font-weight: bold;
+  margin-left: 4px;
+}
+
+/* Search Filter */
+.search-filter {
+  position: relative;
+  max-width: 400px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 35px 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.search-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+}
+
+/* Filter Actions */
+.filter-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 15px;
+  border-top: 1px solid #dee2e6;
+}
+
+.clear-filters-btn {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.clear-filters-btn:hover {
+  background-color: #5a6268;
+}
+
+.active-filters-summary {
+  font-size: 13px;
+  color: #495057;
+  font-weight: 500;
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
   .stat-card {
@@ -121,6 +245,22 @@
   .stat-icon svg {
     width: 12px;
     height: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-buttons {
+    justify-content: center;
+  }
+  
+  .filter-btn {
+    min-width: 80px;
+    justify-content: center;
+  }
+  
+  .filter-actions {
+    flex-direction: column;
+    gap: 10px;
   }
 }
 
