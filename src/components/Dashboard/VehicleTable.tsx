@@ -1,5 +1,5 @@
 import React from 'react';
-import { Vehicle } from '../../types';
+import { Vehicle, VehicleStatus } from '../../types';
 import { VehicleStatusBadge } from './VehicleStatusBadge';
 import { EditableLoadNumber } from './EditableLoadNumber';
 import { DistanceDisplay } from './DistanceDisplay';
@@ -9,6 +9,7 @@ import { mapboxService } from '../../services/mapboxService';
 import { lateTrackingService } from '../../services/lateTrackingService';
 import { DeliveryAppointment } from '../../services/deliveryAppointmentsService';
 import { Truck, MapPin, Clock, Route, RefreshCw, AlertTriangle, CheckCircle, Bug, FileText, Calendar } from 'lucide-react';
+import EditableNotes from './EditableNotes';
 
 interface VehicleTableProps {
   vehicles: Vehicle[];
@@ -22,6 +23,8 @@ interface VehicleTableProps {
   appointments: Record<string, DeliveryAppointment[]>;
   onAppointmentsChange: (vehicleId: string, appointments: DeliveryAppointment[]) => void;
   getNextAppointment: (vehicleId: string) => DeliveryAppointment | null;
+  notes: Record<string, string>;
+  onNoteChange: (vehicleId: string, note: string) => void;
 }
 
 export const VehicleTable: React.FC<VehicleTableProps> = ({
@@ -35,7 +38,9 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
   hasAppointment,
   appointments,
   onAppointmentsChange,
-  getNextAppointment
+  getNextAppointment,
+  notes,
+  onNoteChange
 }) => {
   const formatDistance = (distance?: number) => {
     if (distance === undefined) return 'N/A';
@@ -204,6 +209,7 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
   // Count vehicles with load numbers and appointments
   const loadNumberCount = vehicles.filter(v => loadNumbers[v.id]).length;
   const appointmentCount = vehicles.filter(v => appointments[v.id]?.length > 0).length;
+  const notesCount = vehicles.filter(v => notes[v.id]).length;
 
   return (
     <div className="bg-white shadow-sm rounded-lg overflow-hidden">
@@ -234,6 +240,10 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
             <div className="flex items-center space-x-1">
               <Calendar className="w-4 h-4 text-purple-500" />
               <span className="text-purple-600">{appointmentCount} with appointments</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <FileText className="w-4 h-4 text-blue-500" />
+              <span className="text-blue-600">{notesCount} with notes</span>
             </div>
             <div className="text-gray-500">
               {vehicles.length} total
@@ -277,6 +287,9 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Delivery Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Notes
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Last Update
@@ -399,6 +412,13 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                       className="min-w-0"
                     />
                   </td>
+                  <td className="px-6 py-4">
+                    <EditableNotes
+                      vehicleId={vehicle.id}
+                      initialNote={notes[vehicle.id] || ''}
+                      onNoteChange={onNoteChange}
+                    />
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
                       <Clock className="w-4 h-4 text-gray-400" />
@@ -427,6 +447,7 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
             {partialLocationCount > 0 && ` • ${partialLocationCount} with partial coordinates`}
             {loadNumberCount > 0 && ` • ${loadNumberCount} with load numbers`}
             {appointmentCount > 0 && ` • ${appointmentCount} with appointments`}
+            {notesCount > 0 && ` • ${notesCount} with notes`}
           </div>
           <div>
             Last refreshed: {mapboxService.getCurrentEasternTime()}

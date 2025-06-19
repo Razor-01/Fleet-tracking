@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Layout/Header';
 import { StatsCards } from './components/Dashboard/StatsCards';
 import { VehicleTable } from './components/Dashboard/VehicleTable';
-import { LateTrackingFilter } from './components/Dashboard/LateTrackingFilter';
 import { DistanceControls } from './components/Dashboard/DistanceControls';
 import { ApiConfigPanel } from './components/Settings/ApiConfigPanel';
 import { SystemSettings } from './components/Settings/SystemSettings';
@@ -15,6 +14,7 @@ import { mappingApi } from './services/mappingApi';
 import { mapboxService } from './services/mapboxService';
 import { lateTrackingService, FilterCategories } from './services/lateTrackingService';
 import { DeliveryAppointment } from './services/deliveryAppointmentsService';
+import { notesService } from './services/notesService';
 import { 
   Vehicle, 
   APIConfig, 
@@ -23,7 +23,7 @@ import {
   MapProvider
 } from './types';
 import { Settings, Truck, X, AlertCircle, FileText, Calendar } from 'lucide-react';
-import VehicleFilters from './components/Dashboard/VehicleFilters';
+import OptimizedVehicleFilters from './components/Dashboard/OptimizedVehicleFilters';
 
 const DEFAULT_SYSTEM_SETTINGS: SystemSettingsType = {
   refreshInterval: 5,
@@ -66,6 +66,7 @@ function App() {
     load: 'all_loads'
   });
   const [searchTerm, setSearchTerm] = useLocalStorage('fleet_tracker_search', '');
+  const [notes, setNotes] = useLocalStorage<Record<string, string>>('vehicle_notes', {});
 
   // Use load number management hook
   const { loadNumbers, setLoadNumber, getLoadNumber, getLoadNumberStats } = useLoadNumbers();
@@ -139,7 +140,8 @@ function App() {
         (vehicle.currentLocation.address && vehicle.currentLocation.address.toLowerCase().includes(searchLower)) ||
         (appointments[vehicle.id] && appointments[vehicle.id].some(apt => 
           apt.location.toLowerCase().includes(searchLower)
-        ))
+        )) ||
+        (notes[vehicle.id] && notes[vehicle.id].toLowerCase().includes(searchLower))
       );
     }
 
@@ -218,7 +220,7 @@ function App() {
     }
 
     setFilteredVehicles(filtered);
-  }, [vehicles, appointments, activeFilters, searchTerm, loadNumbers, getDistance]);
+  }, [vehicles, appointments, activeFilters, searchTerm, loadNumbers, getDistance, notes]);
 
   const testAndRefresh = async () => {
     if (!motiveConfig.apiKey || isRefreshing) {
@@ -327,6 +329,16 @@ function App() {
 
   const handleSearchChange = (term: string) => {
     setSearchTerm(term);
+  };
+
+  const handleNoteChange = (vehicleId: string, note: string) => {
+    const updatedNotes = { ...notes };
+    if (note.trim()) {
+      updatedNotes[vehicleId] = note;
+    } else {
+      delete updatedNotes[vehicleId];
+    }
+    setNotes(updatedNotes);
   };
 
   // Get statistics for display
@@ -477,7 +489,7 @@ function App() {
 
             {/* Vehicle Filters */}
             {vehicles.length > 0 && (
-              <VehicleFilters
+              <OptimizedVehicleFilters
                 vehicles={vehicles}
                 activeFilters={activeFilters}
                 onFilterChange={handleFilterChange}
@@ -493,12 +505,7 @@ function App() {
                     getDistance(vehicleId)
                   );
                 }}
-                isStaleData={(date) => {
-                  const updateTime = new Date(date);
-                  const now = new Date();
-                  const minutesSinceUpdate = (now.getTime() - updateTime.getTime()) / (1000 * 60);
-                  return minutesSinceUpdate > 30;
-                }}
+                notes={notes}
               />
             )}
 
@@ -580,6 +587,8 @@ function App() {
               appointments={appointments}
               onAppointmentsChange={handleAppointmentsChange}
               getNextAppointment={getNextAppointment}
+              notes={notes}
+              onNoteChange={handleNoteChange}
             />
           </div>
         );
